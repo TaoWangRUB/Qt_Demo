@@ -13,10 +13,14 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    MyWidget.h \
     mainwindow.h
 
 FORMS += \
     mainwindow.ui
+
+INCLUDEPATH += /home/qjn35x/install/package/python/3.7.6/include/python3.7m
+LIBS += -L/home/qjn35x/install/package/python/3.7.6/lib
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
