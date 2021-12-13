@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++11 no_keywords
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -13,14 +13,14 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
-    MyWidget.h \
     mainwindow.h
 
 FORMS += \
     mainwindow.ui
 
-INCLUDEPATH += /home/qjn35x/install/package/python/3.7.6/include/python3.7m
-LIBS += -L/home/qjn35x/install/package/python/3.7.6/lib
+INCLUDEPATH += /home/qjn35x/install/package/python/3.8.2/include/python3.8
+INCLUDEPATH += /home/qjn35x/install/package/python/3.8.2/lib/python3.8/site-packages/numpy/core/include/numpy
+LIBS += -L/home/qjn35x/install/package/python/3.8.2/lib -lpython3.8
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
