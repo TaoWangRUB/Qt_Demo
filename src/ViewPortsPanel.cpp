@@ -4,7 +4,16 @@
 #include <QDebug>
 #include <QListWidget>
 
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QChart>
+#include <QtCharts/QValueAxis>
+
+//#include <qwt_plot.h>
+
 #include "ViewPortsPanel.h"
+
+QT_CHARTS_USE_NAMESPACE
 
 ViewPortsPanel::ViewPortsPanel(QWidget *parent)
     : QWidget{parent}
@@ -35,6 +44,18 @@ void ViewPortsPanel::createLayout() {
     layout->addWidget(left, 0, 0);
     layout->addWidget(right, 0, 1);
     setLayout(layout);
+
+    QGridLayout* widgetLayoutLeft = new QGridLayout();
+    QChartView *chartViewLeft = new QChartView(left);
+    widgetLayoutLeft->addWidget(chartViewLeft);
+    left->setLayout(widgetLayoutLeft);
+    QGridLayout* widgetLayoutRight = new QGridLayout();
+    QChartView *chartViewRight = new QChartView(right);
+    widgetLayoutRight->addWidget(chartViewRight);
+    right->setLayout(widgetLayoutRight);
+    //chartView->setSceneRect(child->geometry());
+    //chartView->setRenderHint(QPainter::Antialiasing);
+    //child->update(child->geometry());
 }
 
 void ViewPortsPanel::paintEvent(QPaintEvent* event) {
@@ -52,13 +73,12 @@ void ViewPortsPanel::paintEvent(QPaintEvent* event) {
     QList<QWidget *> childWidget = findChildren<QWidget *>(QString(), Qt::FindDirectChildrenOnly);
 
     for(auto child : childWidget) {
-        //qDebug() << child->objectName() << child->metaObject()->className();
+        //qDebug() << child->objectName() << " " << child->width() << " " << child->height();
         painter.setPen(boardPen);
         painter.drawRect(child->geometry());
-
         index++;
         // transform world coordinate to windown coordinate
-        painter.save();
+        /*painter.save();
         painter.translate(child->geometry().left() + child->geometry().width()/2.,
                           child->geometry().top() + child->geometry().height());
         // scale WCS to WCS
@@ -69,44 +89,50 @@ void ViewPortsPanel::paintEvent(QPaintEvent* event) {
         QPen pen(Qt::cyan, 2.);
         // keep line width unscaled
         pen.setCosmetic(true);
-        painter.setPen(pen);
-        //painter.restore();
-        double aLeft[4]{-2.0, 1e-2, 1e-4, 1e-6};
-        double aRight[4]{2.0, 1e-2, 1e-4, 1e-6};
+        painter.setPen(pen);*/
+        // plot lane representation
+        if (child->objectName() == "leftWidget"){
+            double aLeft[4]{-2.0, 1e-2, 1e-4, 1e-6};
+            double aRight[4]{2.0, 1e-2, 1e-4, 1e-6};
+            auto getPoly = [](QLineSeries* path, double* coeff, double xRange = 80., int num = 80){
+                for (int i = 0; i <= num; ++i){
+                    auto x = i * xRange / num;
+                    auto y = coeff[0] + coeff[1] * x + coeff[2] * x * x + coeff[3] * x * x *x;
+                    path->append(y, x);
+                }
+                return;
+            };
+            QChart *chart = new QChart();
+            chart->setTitle("Plan Viewer");
+            QLineSeries* path1 = new QLineSeries();
+            QLineSeries* path2 = new QLineSeries();
+            getPoly(path1, aLeft);
+            path1->setName("left");
+            chart->addSeries(path1);
+            getPoly(path2, aRight);
+            path2->setName("right");
+            chart->addSeries(path2);
+            //chart->createDefaultAxes();
+            QValueAxis *xAxis = new QValueAxis();
+            QValueAxis *yAxis = new QValueAxis();
+            chart->addAxis(xAxis, Qt::AlignBottom);
+            chart->addAxis(yAxis, Qt::AlignLeft);
+            xAxis->setRange(-5, 5);
+            yAxis->setRange(-10, 100);
+            xAxis->setTickCount(11);
+            yAxis->setTickCount(12);
+            xAxis->setTitleText(QStringLiteral("lateral / m"));
+            yAxis->setTitleText(QStringLiteral("long / m"));
+            xAxis->setLabelFormat("%d");
+            yAxis->setLabelFormat("%d");
 
-        auto getPoly = [](double* coeff, double xRange = 80., int num = 80) ->QPainterPath{
-            QPainterPath path;
-            path.moveTo(coeff[0], 0.);
-            for (int i = 1; i <= num; ++i){
-                auto x = i * xRange / num;
-                auto y = coeff[0] + coeff[1] * x + coeff[2] * x * x + coeff[3] * x * x *x;
-                path.lineTo(y, x);
-            }
-            return path;
-        };
-        if (child->objectName() == QString("leftWidget")){
-            //qDebug() << child->objectName();
-            auto lane = getPoly(aLeft);
-            painter.drawPath(lane);
-            lane = getPoly(aRight);
-            painter.drawPath(lane);
-        } else {
-            // placeholder
-            painter.drawLine(-5, 0, -5, 100);
-            painter.drawLine(0, 0, 0, 100);
-            painter.drawLine(5, 0, 5, 100);
-            painter.drawLine(-5, 50, 5, 50);
+            path1->attachAxis(xAxis);
+            path1->attachAxis(yAxis);
+            path2->attachAxis(xAxis);
+            path2->attachAxis(yAxis);
+            auto chartView = child->findChild<QChartView*>(QString(), Qt::FindDirectChildrenOnly);
+            chartView->setChart(chart);
         }
-        // restore painter
-        painter.restore();
     }
-    /*painter.save();
-    painter.setPen(QPen(Qt::black, 1.));
-    painter.setBrush(Qt::red);
-    painter.drawRect(0,0,100,100);
-    painter.translate(geometry().width()/4, geometry().height()/2);
-    painter.scale(2,3);
-    painter.setBrush(Qt::green);
-    painter.drawRect(-50,-50,100,100);
-    painter.restore();*/
+
 }
