@@ -45,6 +45,7 @@ void ViewPortsPanel::createLayout() {
     layout->addWidget(right, 0, 1);
     setLayout(layout);
 
+    // main plot widget
     QGridLayout* widgetLayoutLeft = new QGridLayout();
     QChartView *chartViewLeft = new QChartView(left);
     widgetLayoutLeft->addWidget(chartViewLeft);

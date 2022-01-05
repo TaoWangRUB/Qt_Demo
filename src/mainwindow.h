@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QHBoxLayout>
 
+#include "StatusBar.h"
+
 QT_BEGIN_NAMESPACE
 class QAction;
 class QMenu;
@@ -66,9 +68,7 @@ private:
     /// The upper main toolbar.
     QToolBar* _mainToolbar;
     /// The internal status bar widget.
-    //StatusBar* _statusBar;
-    /// The layout manager for the status bar area of the main window.
-    QHBoxLayout* _statusBarLayout;
+    QStatusBar* _statusBar;
     /// The title string to use for the main window (without any dynamic content).
     QString _baseWindowTitle;
 };

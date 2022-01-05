@@ -1,5 +1,8 @@
 //! [0]
 #include <QtWidgets>
+#include <QSlider>
+#include <QProgressBar>
+
 #include "ViewPortsPanel.h"
 #include "mainwindow.h"
 
@@ -45,30 +48,9 @@ MainWindow::MainWindow(QWidget *parent)
     // set menu bar and tool bar
     createActions();
     // set status bar
+    _statusBar = this->statusBar();
     createStatusBar();
 
-    /*// Create the animation panel below the viewports.
-    QWidget* animationPanel = new QWidget();
-    QVBoxLayout* animationPanelLayout = new QVBoxLayout();
-    animationPanelLayout->setSpacing(0);
-    animationPanelLayout->setContentsMargins(0, 1, 0, 0);
-    animationPanel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    animationPanel->setLayout(animationPanelLayout);
-
-    // Create animation time slider
-    QFrame* timeSlider = new QFrame(this);
-    animationPanelLayout->addWidget(timeSlider);
-    QFrame* trackBar = new QFrame(this);
-    animationPanelLayout->addWidget(trackBar);
-/*    connect(textEdit->document(), &QTextDocument::contentsChanged,
-            this, &MainWindow::documentWasModified);
-
-#ifndef QT_NO_SESSIONMANAGER
-    QGuiApplication::setFallbackSessionManagementEnabled(false);
-    connect(qApp, &QGuiApplication::commitDataRequest,
-            this, &MainWindow::commitData);
-#endif
-*/
     // Accept files via drag & drop.
     setAcceptDrops(true);
 
@@ -187,8 +169,8 @@ void MainWindow::createActions(){
     // rendering
     const QIcon renderIcon = QIcon(":/images/render_active_viewport.bw.svg");
     QAction *renderAct = new QAction(renderIcon, tr("&Screenshot..."), this);
-    openAct->setShortcuts(QKeySequence::Print);
-    openAct->setStatusTip(tr("save current screenshot"));
+    renderAct->setShortcuts(QKeySequence::Print);
+    renderAct->setStatusTip(tr("save current screenshot"));
     //connect(openAct, &QAction::triggered, this, &QWidget::close);
     // add open action to tool bars
     _mainToolbar->addAction(renderAct);
@@ -219,7 +201,29 @@ void MainWindow::createActions(){
 
 //! [32]
 void MainWindow::createStatusBar() {
-    statusBar()->showMessage(tr("Ready"));
+    // Create the animation panel below the viewports.
+    QWidget* animationPanel = new QWidget();
+    QHBoxLayout* animationPanelLayout = new QHBoxLayout();
+    animationPanelLayout->setSpacing(0);
+    animationPanelLayout->setContentsMargins(0, 1, 0, 0);
+    animationPanel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    animationPanel->setLayout(animationPanelLayout);
+
+    // Create animation time slider
+    QLabel *label1 = new QLabel(tr("Frame"));
+    label1->setStyleSheet(" QLabel{ color: yellow }");
+    animationPanelLayout->addWidget(label1);
+    QSlider* timeSlider = new QSlider(Qt::Horizontal, this);
+    animationPanelLayout->addWidget(timeSlider);
+    QLineEdit *frameLabel = new QLineEdit;
+    frameLabel->setStyleSheet(" QLineEdit{ color: yellow }");
+    frameLabel->setPlaceholderText(tr("%1").arg(0));
+    animationPanelLayout->addWidget(frameLabel);
+    QProgressBar* trackBar = new QProgressBar(this);
+    animationPanelLayout->addWidget(trackBar);
+    _statusBar->addPermanentWidget(animationPanel);
+    //statusBar()->showMessage(tr("Ready"));
+    _statusBar->showMessage(tr("Ready"));
 }
 //! [33]
 /*
@@ -282,8 +286,7 @@ void MainWindow::loadFile(const QString &fileName) {
         return;
     }
 
-
-    statusBar()->showMessage(tr("File loaded"), 2000);
+    _statusBar->showMessage(tr("File loaded"), 2000);
 }
 //! [43]
 /*
