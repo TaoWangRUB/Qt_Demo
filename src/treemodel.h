@@ -12,6 +12,7 @@ class TreeModel : public QAbstractItemModel
     Q_OBJECT
 public:
     /// constructor
+    explicit TreeModel();
     explicit TreeModel(const QString& data, QObject *parent = nullptr);
     /// destructor
     ~TreeModel();
@@ -34,7 +35,8 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     /// get data columns stored in the TreeItem for a given model index
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-
+    /// redraw
+    void redraw(const QString &data);
 private:
     void setupModelData(const QStringList &lines, TreeItem *parent);
     void setupModelData_dfs(const QStringList &lines, TreeItem *parent);

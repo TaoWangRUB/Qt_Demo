@@ -1,5 +1,4 @@
 #include "treeitem.h"
-
 /// constructor
 TreeItem::TreeItem(const QVector<QVariant> &data, TreeItem *parent)
     : _itemData(data), _parentItem(parent)
@@ -47,4 +46,11 @@ QVariant TreeItem::get_data(int column) const
 {
     if(column < 0 || column >= _itemData.size()) return QVariant();
     return _itemData.at(column);
+}
+
+void TreeItem::reset()
+{
+    _childItems.clear();
+    _itemData.clear();
+    _parentItem = nullptr;
 }

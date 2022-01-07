@@ -1,13 +1,10 @@
 #include <QApplication>
 #include <QObject>
-#include <QTreeView>
-#include <QFile>
 
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 
 #include "mainwindow.h"
-#include "treemodel.h"
 
 int main(int argc, char *argv[])
 {

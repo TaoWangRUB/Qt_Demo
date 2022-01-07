@@ -3,8 +3,10 @@
 
 #include <QMainWindow>
 #include <QHBoxLayout>
+#include <QTreeView>
 
 #include "StatusBar.h"
+#include "treemodel.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -67,6 +69,10 @@ private:
     QWidget* _viewportsPanel;
     /// The UI panel containing the data inspector tabs.
     QWidget* _dataInspector;
+    /// tree view of the data structure
+    QTreeView* _dataView;
+    /// data container
+    TreeModel* _model;
     /// The upper main toolbar.
     QToolBar* _mainToolbar;
     /// The internal status bar widget.

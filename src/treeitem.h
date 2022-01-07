@@ -25,6 +25,8 @@ public:
     QVariant get_data(int column) const;
     /// get row number of current item
     int get_row() const;
+    /// reset
+    void reset();
 
 private:
     QVector<TreeItem*> _childItems;

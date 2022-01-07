@@ -4,6 +4,7 @@
 #include <QtWidgets>
 #include <QSlider>
 #include <QProgressBar>
+#include <QAbstractItemModel>
 
 #include "ViewPortsPanel.h"
 #include "treemodel.h"
@@ -28,8 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Create the viewports panel and the data inspector panel.
     QSplitter* dataInspectorSplitter = new QSplitter();
-    dataInspectorSplitter->setOrientation(Qt::Vertical);
-    dataInspectorSplitter->setChildrenCollapsible(false);
+    dataInspectorSplitter->setOrientation(Qt::Horizontal);//Vertical
+    dataInspectorSplitter->setChildrenCollapsible(true);
     dataInspectorSplitter->setHandleWidth(0);
     // add viewport to splitter
     _viewportsPanel = new ViewPortsPanel(this);
@@ -38,17 +39,10 @@ MainWindow::MainWindow(QWidget *parent)
     // add dataInspector to splitter
     _dataInspector = new QWidget(this);
     QGridLayout* layout = new QGridLayout();
-    QFile file(":/examples/default.txt");
-    file.open(QIODevice::ReadOnly);
-    TreeModel* model = new TreeModel(file.readAll());
-    file.close();
-    /*QFileSystemModel *model = new QFileSystemModel;
-    model->setRootPath(QDir::currentPath());*/
-    QTreeView* view = new QTreeView();
-    view->setModel(model);
-    //view->show();
-    //view->setEnabled(true);
-    layout->addWidget(view);
+    _dataView = new QTreeView();
+    //_model = new TreeModel();
+    //_dataView->setModel(_model);
+    layout->addWidget(_dataView);
     _dataInspector->setLayout(layout);
     dataInspectorSplitter->addWidget(_dataInspector);
     dataInspectorSplitter->setStretchFactor(0, 1);
@@ -299,6 +293,17 @@ bool MainWindow::maybeSave()
 void MainWindow::loadFile(const QString &fileName) {
     QFile file(fileName);
     bool signalOk = true;
+
+    QFile file0(":/examples/default.txt");
+    file0.open(QIODevice::ReadOnly);
+    //_model->redraw(file0.readAll());
+    _model = new TreeModel(file0.readAll());
+    file0.close();
+    /*QFileSystemModel *model = new QFileSystemModel;
+    model->setRootPath(QDir::currentPath());*/
+    _dataView->setModel(_model);
+    //_dataView->viewport()->update();
+
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("Application"),
                              tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
@@ -323,10 +328,10 @@ void MainWindow::loadFile(const QString &fileName) {
                 subkey = PyList_GetItem(keys, i);
                 subitem = PyDict_GetItem(item, subkey);
                 if(PyDict_Check(subitem) && PyUnicode_AsUTF8(subkey) != "undecoded"){
-                    qDebug() << PyUnicode_AsUTF8(key) << " " << PyUnicode_AsUTF8(subkey) << " "<< level;
+                    //qDebug() << PyUnicode_AsUTF8(key) << " " << PyUnicode_AsUTF8(subkey) << " "<< level;
                     dfs(subkey, subitem);
-                } else
-                    qDebug() << PyUnicode_AsUTF8(key) << " " << PyUnicode_AsUTF8(subkey) << " "<< level;
+                } //else
+                    //qDebug() << PyUnicode_AsUTF8(key) << " " << PyUnicode_AsUTF8(subkey) << " "<< level;
             }
         };
         dfs(PyUnicode_FromString(key), val);

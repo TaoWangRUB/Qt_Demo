@@ -8,11 +8,20 @@
 #include "treeitem.h"
 
 /// constructor
+TreeModel::TreeModel()
+    : QAbstractItemModel{nullptr}
+{
+    _rootItem = new TreeItem({tr("Title"), tr("Summary")});
+}
+
+/// constructor
 TreeModel::TreeModel(const QString &data, QObject *parent)
     : QAbstractItemModel{parent}
 {
     _rootItem = new TreeItem({tr("Title"), tr("Summary")});
+    beginResetModel();
     setupModelData(data.split('\n'), _rootItem);
+    endResetModel();
 }
 
 /// destructor
@@ -187,4 +196,11 @@ void TreeModel::setupModelData_dfs(const QStringList &lines, TreeItem *parent)
     };
     dfs(0);
     return;
+}
+
+void TreeModel::redraw(const QString &data){
+    beginResetModel();
+    _rootItem->reset();
+    setupModelData(data.split('\n'), _rootItem);
+    endResetModel();
 }
