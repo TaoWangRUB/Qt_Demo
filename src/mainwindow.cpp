@@ -1,9 +1,12 @@
 //! [0]
+#include <functional>
+
 #include <QtWidgets>
 #include <QSlider>
 #include <QProgressBar>
 
 #include "ViewPortsPanel.h"
+#include "treemodel.h"
 #include "mainwindow.h"
 
 #pragma push_macro("slots")
@@ -34,6 +37,19 @@ MainWindow::MainWindow(QWidget *parent)
     dataInspectorSplitter->addWidget(_viewportsPanel);
     // add dataInspector to splitter
     _dataInspector = new QWidget(this);
+    QGridLayout* layout = new QGridLayout();
+    QFile file(":/examples/default.txt");
+    file.open(QIODevice::ReadOnly);
+    TreeModel* model = new TreeModel(file.readAll());
+    file.close();
+    /*QFileSystemModel *model = new QFileSystemModel;
+    model->setRootPath(QDir::currentPath());*/
+    QTreeView* view = new QTreeView();
+    view->setModel(model);
+    //view->show();
+    //view->setEnabled(true);
+    layout->addWidget(view);
+    _dataInspector->setLayout(layout);
     dataInspectorSplitter->addWidget(_dataInspector);
     dataInspectorSplitter->setStretchFactor(0, 1);
     dataInspectorSplitter->setStretchFactor(1, 0);
@@ -69,10 +85,10 @@ bool MainWindow::python_initialization(){
     if (Py_IsInitialized() > 0){
         PyRun_SimpleString("print('load pickle')");
         //PyRun_SimpleString("sys.path.append('./')");
-        p_io_module_g = PyImport_ImportModule("io");
-        p_pickle_module_g = PyImport_ImportModule("pickle");
+        py_io_module = PyImport_ImportModule("io");
+        py_pickle_module = PyImport_ImportModule("pickle");
 
-        if (p_pickle_module_g && p_io_module_g)
+        if (py_pickle_module && py_io_module)
             return true;
     }
     PyErr_Print();
@@ -80,14 +96,17 @@ bool MainWindow::python_initialization(){
 }
 
 void MainWindow::python_shutdown() {
-    Py_CLEAR(p_pickle_module_g);
-    Py_CLEAR(p_io_module_g);
-    p_io_module_g = NULL, p_pickle_module_g = NULL;
+    Py_CLEAR(py_pickle_module);
+    Py_CLEAR(py_io_module);
+    py_io_module = nullptr, py_pickle_module = nullptr;
     Py_Finalize();
 }
 
 void MainWindow::open(){
-    QString fileName = QFileDialog::getOpenFileName(this);
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("load pickle"),
+                                                    QDir::currentPath()+"/../../../../examples",
+                                                    tr("*.pickle"));
     if (!fileName.isEmpty())
         loadFile(fileName);
 }
@@ -112,7 +131,7 @@ void MainWindow::createActions(){
     QAction *openAct = new QAction(openIcon, tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open an existing file"));
-    connect(openAct, &QAction::triggered, this, &QWidget::close);
+    connect(openAct, &QAction::triggered, this, &MainWindow::open);
     // add open action to file menu and tool bars
     fileMenu->addAction(openAct);
     _mainToolbar->addAction(openAct);
@@ -279,15 +298,73 @@ bool MainWindow::maybeSave()
 //! [42]
 void MainWindow::loadFile(const QString &fileName) {
     QFile file(fileName);
+    bool signalOk = true;
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("Application"),
-                             tr("Cannot read file %1:\n%2.")
-                             .arg(QDir::toNativeSeparators(fileName), file.errorString()));
+                             tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
         return;
+    } else {
+        PyObject *p_handle = PyObject_CallMethod(py_io_module, "open", "ss", fileName.toStdString().c_str(), "rb");
+        PyObject* py_dict = PyObject_CallMethod(py_pickle_module, "load", "O", p_handle);
+        // return New Reference
+        auto key = "SP2021";
+        auto val = PyDict_GetItemWithError(py_dict, PyUnicode_FromString(key));
+        if(val == NULL){
+            signalOk = false;
+            _statusBar->showMessage(tr("%1 is missing from pickle log file").arg(key));
+        }
+        //testing
+        PyObject* subkey, *subitem;
+        std::function<void(PyObject*, PyObject*)> dfs = [&](PyObject* key, PyObject* item){
+            int level = 0;
+            PyObject* keys = PyDict_Keys(item);
+            for (int i = 0; i < PyList_Size(keys); ++i){
+                level += 1;
+                subkey = PyList_GetItem(keys, i);
+                subitem = PyDict_GetItem(item, subkey);
+                if(PyDict_Check(subitem) && PyUnicode_AsUTF8(subkey) != "undecoded"){
+                    qDebug() << PyUnicode_AsUTF8(key) << " " << PyUnicode_AsUTF8(subkey) << " "<< level;
+                    dfs(subkey, subitem);
+                } else
+                    qDebug() << PyUnicode_AsUTF8(key) << " " << PyUnicode_AsUTF8(subkey) << " "<< level;
+            }
+        };
+        dfs(PyUnicode_FromString(key), val);
+        Py_DECREF(subitem);
+        Py_DECREF(subkey);
+        Py_CLEAR(p_handle);
+        Py_CLEAR(py_dict);
     }
+    //QMessageBox::information(this, tr("open log file"), tr("open file %1").arg(fileName));
 
-    _statusBar->showMessage(tr("File loaded"), 2000);
+    _statusBar->showMessage(tr("File loaded %1").arg(_statusBar->currentMessage()));
+
 }
+
+PyObject* MainWindow::PyDict_GetItemWrapper(PyObject* const py_dict_object, char* const key)
+{
+    /// this function returns a borrowed reference; no need to call decrease reference
+    if (py_dict_object == NULL)
+    {
+        return NULL;
+    }
+    else
+    {
+        // return New Reference
+        PyObject *py_key = PyUnicode_FromString(key);
+        // returns NULL if object is not found in dictionary, else pointer to object in dict
+        PyObject *pobj_object_found = PyDict_GetItemWithError(py_dict_object, py_key);
+        if (NULL == pobj_object_found)
+        {
+            _statusBar->showMessage(tr("%1 is missing from pickle log file").arg(key));
+        }
+        // destruct object
+        Py_CLEAR(py_key);
+        // this is a borrowed reference, no need to deallocated
+        return pobj_object_found;
+    }
+}
+
 //! [43]
 /*
 //! [44]

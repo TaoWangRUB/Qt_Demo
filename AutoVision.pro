@@ -3,10 +3,14 @@ QT += charts
 requires(qtConfig(filedialog))
 
 HEADERS       = src/mainwindow.h \
-    src/ViewPortsPanel.h
+    src/ViewPortsPanel.h \
+    src/treeitem.h \
+    src/treemodel.h
 SOURCES       = src/main.cpp \
                 src/ViewPortsPanel.cpp \
-                src/mainwindow.cpp
+                src/mainwindow.cpp \
+                src/treeitem.cpp \
+                src/treemodel.cpp
 
 RESOURCES     = AutoVision.qrc
 

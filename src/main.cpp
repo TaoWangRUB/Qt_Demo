@@ -1,10 +1,13 @@
 #include <QApplication>
 #include <QObject>
+#include <QTreeView>
+#include <QFile>
 
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 
 #include "mainwindow.h"
+#include "treemodel.h"
 
 int main(int argc, char *argv[])
 {
@@ -44,6 +47,7 @@ int main(int argc, char *argv[])
     if (!parser.positionalArguments().isEmpty())
         mainWin.loadFile(parser.positionalArguments().first());
     mainWin.show();
+
     return app.exec();
 }
 //! [0]

@@ -17,5 +17,7 @@
         <file>images/stop_animation.bw.svg</file>
         <file>images/play_animation.bw.svg</file>
         <file>images/logo.png</file>
+        <file>examples/default.txt</file>
+        <file>examples/ADCAM_WBACR61010LJ03430_20211202_123052_pic_0010.pickle</file>
     </qresource>
 </RCC>
